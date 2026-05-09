@@ -1,1 +1,167 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Guruji Ki Quiz</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://alwingulla.com/sdk.js" data-zone="10985812" data-sdk="show_10985812"></script>
+
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 15px; text-align: center; overflow-x: hidden; }
+        .wallet-card { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .quiz-card { background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-height: 250px; position: relative; z-index: 10; }
+        .btn { background: #0088cc; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; width: 100%; margin: 8px 0; font-size: 16px; font-weight: bold; }
+        .withdraw-btn { background: #27ae60; padding: 8px 15px; width: auto; font-size: 14px; }
+        input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        #question { font-size: 18px; margin-bottom: 20px; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+    <div class="wallet-card">
+        <div>💰 <span id="coins">0</span> Coins (₹<span id="rupee">0</span>)</div>
+        <button class="btn withdraw-btn" onclick="showWithdraw()">Withdraw</button>
+    </div>
+
+    <div class="quiz-card" id="main-box">
+        <h3 id="question">Sawal load ho raha hai...</h3>
+        <div id="options"></div>
+        <p style="font-size: 12px; color: gray; margin-top: 15px;">3 Sahi jawab = 50 Coins 💸</p>
+    </div>
+
+    <div id="withdraw-box" style="display:none;" class="quiz-card">
+        <h3>Withdrawal (Min ₹20)</h3>
+        <input type="text" id="upi-id" placeholder="Apni UPI ID dalein">
+        <button class="btn" onclick="processWithdraw()">Request Bhejein</button>
+        <button class="btn" style="background: #e74c3c;" onclick="hideWithdraw()">Back</button>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBpRSm6R2q3MluRWU_5MTVh7unovkVcOgk",
+            authDomain: "famous-palisade-437405-m5.firebaseapp.com",
+            databaseURL: "https://famous-palisade-437405-m5-default-rtdb.firebaseio.com",
+            projectId: "famous-palisade-437405-m5",
+            storageBucket: "famous-palisade-437405-m5.firebasestorage.app",
+            messagingSenderId: "686867296734",
+            appId: "1:686867296734:web:ee2515d37e0e0e22f16d4f"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const auth = firebase.auth();
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "guest_" + Math.floor(Math.random()*1000);
+        let userCoins = 0;
+        let qCount = 0;
+
+        auth.signInAnonymously().then(() => {
+            db.ref('users/' + userId).on('value', (snap) => {
+                const data = snap.val();
+                if(data) {
+                    userCoins = data.coins || 0;
+                    document.getElementById('coins').innerText = userCoins;
+                    document.getElementById('rupee').innerText = (userCoins / 100).toFixed(2);
+                }
+            });
+            loadQuiz();
+        });
+
+        const questions = [
+            { q: "Bharat ki rajdhani kya hai?", o: ["Mumbai", "Delhi", "Jaipur", "Kolkata"], c: 1 },
+            { q: "Computer ka brain kise kehte hain?", o: ["RAM", "CPU", "Mouse", "Keyboard"], c: 1 },
+            { q: "Mor (Peacock) bharat ka kya hai?", o: ["Pashu", "Phool", "Pakshi", "Ped"], c: 2 },
+            { q: "IPL mein 'Thala' kise kehte hain?", o: ["Virat", "Rohit", "Dhoni", "Hardik"], c: 2 },
+            { q: "Rajasthan ka 'Pink City' kaunsa hai?", o: ["Ajmer", "Jodhpur", "Jaipur", "Kota"], c: 2 }
+        ];
+
+        function loadQuiz() {
+            let rand = Math.floor(Math.random() * questions.length);
+            let item = questions[rand];
+            document.getElementById('question').innerText = item.q;
+            let optDiv = document.getElementById('options');
+            optDiv.innerHTML = '';
+            item.o.forEach((opt, i) => {
+                let b = document.createElement('button');
+                b.className = 'btn';
+                b.innerText = opt;
+                b.onclick = () => checkAns(i, item.c);
+                optDiv.appendChild(b);
+            });
+        }
+
+        function checkAns(picked, correct) {
+            if(picked === correct) {
+                qCount++;
+                if(qCount >= 3) {
+                    tg.showConfirm("3 Sahi Jawab! Reward Ad dekhein coins lene ke liye?", (ok) => {
+                        if(ok) showAd();
+                        else { qCount = 0; loadQuiz(); }
+                    });
+                } else {
+                    tg.showAlert("Sahi! Agla sawal...");
+                    loadQuiz();
+                }
+            } else {
+                tg.showAlert("Galat jawab! Phir se koshish karein.");
+                qCount = 0;
+                loadQuiz();
+            }
+        }
+
+        function showAd() {
+            if (typeof show_10985812 === 'function') {
+                show_10985812().then(() => {
+                    let reward = 50; 
+                    db.ref('users/' + userId).update({ coins: userCoins + reward });
+                    qCount = 0;
+                    loadQuiz();
+                    tg.showAlert("Mubarak ho! 50 Coins add ho gaye.");
+                }).catch(() => {
+                    tg.showAlert("Ad load nahi hua, next time try karein.");
+                    qCount = 0;
+                    loadQuiz();
+                });
+            } else {
+                tg.showAlert("Ad system ready nahi hai, try again.");
+                qCount = 0;
+                loadQuiz();
+            }
+        }
+
+        function showWithdraw() {
+            document.getElementById('main-box').style.display = 'none';
+            document.getElementById('withdraw-box').style.display = 'block';
+        }
+
+        function hideWithdraw() {
+            document.getElementById('main-box').style.display = 'block';
+            document.getElementById('withdraw-box').style.display = 'none';
+        }
+
+        function processWithdraw() {
+            let upi = document.getElementById('upi-id').value;
+            if(userCoins < 2000) {
+                tg.showAlert("Kam se kam 2000 coins chahiye!");
+            } else if(!upi.includes('@')) {
+                tg.showAlert("Sahi UPI ID dalein!");
+            } else {
+                db.ref('withdrawals').push({
+                    uid: userId, upi: upi, amount: userCoins, status: "pending", date: new Date().toLocaleString()
+                }).then(() => {
+                    db.ref('users/' + userId).update({ coins: 0 });
+                    tg.showAlert("Request bhej di gayi hai!");
+                    hideWithdraw();
+                });
+            }
+        }
+    </script>
+</body>
+</html>
