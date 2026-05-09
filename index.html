@@ -2,114 +2,437 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Guruji Quiz</title>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Guruji Quiz Pro</title>
+    
+    <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
     <script src="https://alwingulla.com/sdk.js" data-zone="10985812" data-sdk="show_10985812"></script>
+
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f4f7f9; margin: 0; padding: 15px; text-align: center; }
-        .wallet-card { background: #fff; padding: 12px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .quiz-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-height: 220px; }
-        .btn { background: #0088cc; color: #fff; border: none; padding: 12px; border-radius: 8px; width: 100%; margin: 6px 0; font-size: 16px; font-weight: 600; }
-        .withdraw-btn { background: #2ecc71; width: auto; padding: 6px 12px; font-size: 13px; }
-        #question { font-size: 19px; color: #333; margin-bottom: 15px; }
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #f4f7f9);
+            --text-color: var(--tg-theme-text-color, #222);
+            --hint-color: var(--tg-theme-hint-color, #888);
+            --link-color: var(--tg-theme-link-color, #0088cc);
+            --secondary-bg: var(--tg-theme-secondary-bg-color, #fff);
+            --btn-color: var(--tg-theme-button-color, #0088cc);
+            --btn-text: var(--tg-theme-button-text-color, #fff);
+            --safe-area-inset-top: 0px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: calc(15px + var(--safe-area-inset-top)) 15px 15px 15px;
+            text-align: center;
+            -webkit-user-select: none;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        /* Top Wallet Section */
+        .header-card {
+            background-color: var(--secondary-bg);
+            padding: 12px 18px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .balance-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 17px;
+        }
+
+        .coin-icon { font-size: 20px; }
+
+        .header-btn {
+            background-color: #2ecc71; /* Green for Withdraw */
+            color: #fff;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .header-btn:active { opacity: 0.8; }
+
+        /* Main Quiz Card */
+        .main-card {
+            background-color: var(--secondary-bg);
+            padding: 25px 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            min-height: 260px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+
+        #question {
+            font-size: 21px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            line-height: 1.3;
+            color: var(--text-color);
+        }
+
+        /* Professional Option Buttons */
+        #options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid rgba(0,0,0,0.08);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-btn:active {
+            background-color: rgba(0,0,0,0.03);
+            transform: translateY(1px);
+        }
+
+        .option-btn.correct {
+            background-color: rgba(46, 204, 113, 0.15);
+            border-color: #2ecc71;
+            color: #27ae60;
+        }
+
+        .option-btn.wrong {
+            background-color: rgba(231, 76, 60, 0.1);
+            border-color: #e74c3c;
+            color: #c0392b;
+        }
+
+        /* Withdraw Panel */
+        #withdraw-box {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color);
+            z-index: 100;
+            padding: calc(20px + var(--safe-area-inset-top)) 20px;
+            box-sizing: border-box;
+        }
+
+        .withdraw-content {
+            background-color: var(--secondary-bg);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .withdraw-input {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(0,0,0,0.1);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .withdraw-input:focus {
+            border-color: var(--link-color);
+            outline: none;
+        }
+
+        .main-btn {
+            background-color: var(--btn-color);
+            color: var(--btn-text);
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .back-btn {
+            background-color: rgba(0,0,0,0.05);
+            color: var(--text-color);
+        }
+
+        /* Loading Screen (Fast) */
+        #loading-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color);
+            z-index: 200;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--link-color);
+            border-radius: 50%;
+            width: 30px; height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div class="wallet-card">
-        <div style="font-weight:600;">💰 <span id="coins">0</span> Coins</div>
-        <button class="btn withdraw-btn" onclick="showWithdraw()">Withdraw</button>
+
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <div style="color: var(--hint-color); font-size: 14px;">Guruji is preparing...</div>
     </div>
-    <div class="quiz-card" id="main-box">
-        <h3 id="question">Loading...</h3>
-        <div id="options"></div>
+
+    <div class="header-card">
+        <div class="balance-group">
+            <span class="coin-icon">💰</span>
+            <span id="coins-display">0</span> <span style="font-weight:400; color:var(--hint-color); font-size:14px;">(₹<span id="rupee-display">0</span>)</span>
+        </div>
+        <button class="header-btn" onclick="showWithdraw()">Withdraw</button>
     </div>
-    <div id="withdraw-box" style="display:none;" class="quiz-card">
-        <h3>Withdrawal</h3>
-        <input type="text" id="upi-id" placeholder="UPI ID (e.g. name@upi)" style="width:85%; padding:10px; margin-bottom:10px; border-radius:5px; border:1px solid #ccc;">
-        <button class="btn" onclick="processWithdraw()">Withdraw Now</button>
-        <button class="btn" style="background:#888;" onclick="hideWithdraw()">Back</button>
+
+    <div class="main-card">
+        <div id="question">Sawal load ho raha hai...</div>
+        <div id="options-container">
+            </div>
+        <p style="font-size: 12px; color: var(--hint-color); margin-top: 25px; font-weight:500;">
+            ✅ 3 Sahi Jawab = 50 Coins
+        </p>
+    </div>
+
+    <div id="withdraw-box">
+        <div class="withdraw-content">
+            <h3 style="margin-top:0;">Payment Request</h3>
+            <p style="color: var(--hint-color); font-size: 14px; margin-bottom: 20px;">Minimum: ₹20 (2000 Coins)</p>
+            <input type="text" id="upi-id-input" class="withdraw-input" placeholder="UPI ID (e.g., name@upi)">
+            <button class="main-btn" onclick="processWithdraw()">Send Request</button>
+            <button class="main-btn back-btn" onclick="hideWithdraw()">Back</button>
+        </div>
     </div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBpRSm6R2q3MluRWU_5MTVh7unovkVcOgk",
-            authDomain: "famous-palisade-437405-m5.firebaseapp.com",
-            databaseURL: "https://famous-palisade-437405-m5-default-rtdb.firebaseio.com",
-            projectId: "famous-palisade-437405-m5",
-            storageBucket: "famous-palisade-437405-m5.firebasestorage.app",
-            messagingSenderId: "686867296734",
-            appId: "1:686867296734:web:ee2515d37e0e0e22f16d4f"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "user_" + Math.floor(Math.random()*999);
-        let userCoins = 0, qCount = 0;
-
-        firebase.auth().signInAnonymously().then(() => {
-            db.ref('users/' + userId).on('value', (snap) => {
-                userCoins = (snap.val() && snap.val().coins) || 0;
-                document.getElementById('coins').innerText = userCoins;
-            });
-            loadQuiz();
-        });
-
-        const questions = [
+        // --- 1. QUIZ DATA (Load Fast) ---
+        const questionsData = [
             { q: "Rajasthan ka state animal kaunsa hai?", o: ["Camel", "Tiger", "Lion", "Elephant"], c: 0 },
-            { q: "Bharat ka sabse bada rajya (Area)?", o: ["UP", "MP", "Rajasthan", "Goa"], c: 2 },
-            { q: "Telegram ke founder kaun hain?", o: ["Elon Musk", "Pavel Durov", "Mark Zuckerberg", "Bill Gates"], c: 1 }
+            { q: "Bharat ka sabse bada rajya (Area mein)?", o: ["UP", "MP", "Rajasthan", "Goa"], c: 2 },
+            { q: "Telegram ke founder kaun hain?", o: ["Elon Musk", "Pavel Durov", "Zuckerberg", "Gates"], c: 1 },
+            { q: "IPL mein 'Thala' kise kehte hain?", o: ["Virat", "Rohit", "Dhoni", "Hardik"], c: 2 },
+            { q: "Computer ka brain kise kehte hain?", o: ["RAM", "CPU", "Mouse", "Keyboard"], c: 1 },
+            { q: "Bharat ki rajdhani kya hai?", o: ["Mumbai", "Delhi", "Jaipur", "Kolkata"], c: 1 }
         ];
 
-        function loadQuiz() {
-            let item = questions[Math.floor(Math.random() * questions.length)];
-            document.getElementById('question').innerText = item.q;
-            let optDiv = document.getElementById('options');
-            optDiv.innerHTML = '';
-            item.o.forEach((opt, i) => {
-                let b = document.createElement('button');
-                b.className = 'btn'; b.innerText = opt;
-                b.onclick = () => {
-                    if(i === item.c) {
-                        qCount++;
-                        if(qCount >= 3) {
-                            tg.showConfirm("3 Jawab Sahi! 50 Coins lene ke liye ad dekhein?", (ok) => { if(ok) showAd(); else { qCount=0; loadQuiz(); } });
-                        } else { tg.showAlert("Sahi! Agla sawal..."); loadQuiz(); }
-                    } else { tg.showAlert("Galat! Phir se koshish karein."); qCount=0; loadQuiz(); }
-                };
-                optDiv.appendChild(b);
+        // --- 2. CORE LOGIC ---
+        let currentQuestion = null;
+        let correctCount = 0;
+        let globalUserCoins = 0;
+        let isAnswering = false;
+
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        function loadNewQuestion() {
+            isAnswering = false;
+            currentQuestion = questionsData[Math.floor(Math.random() * questionsData.length)];
+            document.getElementById('question').innerText = currentQuestion.q;
+            
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            currentQuestion.o.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = option;
+                btn.onclick = () => handleAnswer(index, btn);
+                container.appendChild(btn);
             });
         }
 
-        function showAd() {
+        function handleAnswer(pickedIndex, clickedBtn) {
+            if(isAnswering) return;
+            isAnswering = true;
+            
+            const buttons = document.querySelectorAll('.option-btn');
+            
+            if(pickedIndex === currentQuestion.c) {
+                clickedBtn.classList.add('correct');
+                correctCount++;
+                if(correctCount >= 3) {
+                    // Ask to show Ad
+                    setTimeout(() => {
+                        tg.showConfirm("3 Sahi Jawab! Coins lene ke liye chota ad dekhein?", (ok) => {
+                            if(ok) triggerAd();
+                            else { correctCount = 0; loadNewQuestion(); }
+                        });
+                    }, 500);
+                } else {
+                    tg.HapticFeedback.notificationOccurred('success');
+                    setTimeout(loadNewQuestion, 800); // Small delay to show correct color
+                }
+            } else {
+                clickedBtn.classList.add('wrong');
+                buttons[currentQuestion.c].classList.add('correct'); // Show correct answer
+                tg.HapticFeedback.notificationOccurred('error');
+                tg.showAlert("Galat jawab! Fir se start karein.");
+                correctCount = 0;
+                setTimeout(loadNewQuestion, 1200);
+            }
+        }
+
+        // --- 3. AD & REWARD ---
+        function triggerAd() {
             if (typeof show_10985812 === 'function') {
                 show_10985812().then(() => {
-                    db.ref('users/' + userId).update({ coins: userCoins + 50 });
-                    qCount = 0; loadQuiz();
-                    tg.showAlert("50 Coins add ho gaye!");
+                    // Reward
+                    addCoinsToUser(50);
+                    correctCount = 0;
+                    loadNewQuestion();
+                    tg.showAlert("Mubarak ho! 50 Coins add ho gaye.");
                 }).catch(() => {
-                    tg.showAlert("Ad server busy hai, bina ad ke continue karein.");
-                    qCount = 0; loadQuiz();
+                    tg.showAlert("Ad busy hai, Next time try karein.");
+                    correctCount = 0;
+                    loadNewQuestion();
                 });
-            } else { qCount = 0; loadQuiz(); }
+            } else {
+                correctCount = 0;
+                loadNewQuestion();
+            }
         }
-        function showWithdraw() { document.getElementById('main-box').style.display='none'; document.getElementById('withdraw-box').style.display='block'; }
-        function hideWithdraw() { document.getElementById('main-box').style.display='block'; document.getElementById('withdraw-box').style.display='none'; }
+
+        // --- 4. FIREBASE & AUTH (Load after UI) ---
+        let db = null;
+        let userId = null;
+
+        function initializeBackend() {
+            // Check if Firebase is loaded yet (because of 'defer')
+            if (typeof firebase === 'undefined') {
+                setTimeout(initializeBackend, 100);
+                return;
+            }
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyBpRSm6R2q3MluRWU_5MTVh7unovkVcOgk",
+                authDomain: "famous-palisade-437405-m5.firebaseapp.com",
+                databaseURL: "https://famous-palisade-437405-m5-default-rtdb.firebaseio.com",
+                projectId: "famous-palisade-437405-m5",
+                storageBucket: "famous-palisade-437405-m5.firebasestorage.app",
+                messagingSenderId: "686867296734",
+                appId: "1:686867296734:web:ee2515d37e0e0e22f16d4f"
+            };
+
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+            
+            userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "user_" + Math.floor(Math.random()*9999);
+
+            firebase.auth().signInAnonymously().then(() => {
+                // Load User Data
+                db.ref('users/' + userId).on('value', (snap) => {
+                    const data = snap.val();
+                    globalUserCoins = (data && data.coins) || 0;
+                    updateDisplay(globalUserCoins);
+                    
+                    // First time load: hide loading screen
+                    if(document.getElementById('loading-screen').style.display !== 'none') {
+                        document.getElementById('loading-screen').style.display = 'none';
+                        loadNewQuestion(); // Question load after auth
+                    }
+                });
+            }).catch(err => {
+                console.error(err);
+                tg.showAlert("Auth Error! Bot restart karein.");
+            });
+        }
+
+        function updateDisplay(coins) {
+            document.getElementById('coins-display').innerText = coins;
+            document.getElementById('rupee-display').innerText = (coins / 100).toFixed(2);
+        }
+
+        function addCoinsToUser(amount) {
+            if(!db || !userId) return;
+            db.ref('users/' + userId).update({
+                coins: globalUserCoins + amount
+            });
+        }
+
+        // --- 5. WITHDRAW LOGIC ---
+        function showWithdraw() {
+            document.getElementById('withdraw-box').style.display = 'block';
+        }
+
+        function hideWithdraw() {
+            document.getElementById('withdraw-box').style.display = 'none';
+        }
+
         function processWithdraw() {
-            let upi = document.getElementById('upi-id').value;
-            if(userCoins < 2000) tg.showAlert("Min 2000 Coins chahiye!");
-            else if(!upi.includes('@')) tg.showAlert("Sahi UPI ID dalein!");
-            else {
-                db.ref('withdrawals').push({ uid: userId, upi: upi, amount: userCoins, status: "pending" }).then(() => {
+            const upi = document.getElementById('upi-id-input').value;
+            if(globalUserCoins < 2000) {
+                tg.showAlert("Kam se kam ₹20 (2000 Coins) hona zaruri hai!");
+            } else if(!upi.includes('@') || upi.length < 5) {
+                tg.showAlert("Sahi UPI ID dalein!");
+            } else {
+                if(!db || !userId) return;
+                db.ref('withdrawals').push({
+                    uid: userId,
+                    upi: upi,
+                    amount: globalUserCoins,
+                    status: "pending",
+                    date: new Date().toLocaleString()
+                }).then(() => {
                     db.ref('users/' + userId).update({ coins: 0 });
-                    tg.showAlert("Request Sent!"); hideWithdraw();
+                    tg.showAlert("Request mil gayi hai! 24h mein payment mil jayega.");
+                    hideWithdraw();
                 });
             }
         }
+
+        // Start everything
+        initializeBackend();
+        
+        // Safety timeout: If Firebase takes too long, just show the game
+        setTimeout(() => {
+            if(document.getElementById('loading-screen').style.display !== 'none') {
+                document.getElementById('loading-screen').style.display = 'none';
+                loadNewQuestion();
+            }
+        }, 5000);
+
     </script>
 </body>
 </html>
