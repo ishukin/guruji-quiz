@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guruji Admin Control</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; margin: 0; }
+        #login-box { max-width: 400px; margin: 100px auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        #admin-content { display: none; max-width: 800px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h2 { color: #0088cc; margin-top: 0; border-bottom: 2px solid #0088cc; padding-bottom: 10px; }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 16px; }
+        button { background: #0088cc; color: white; border: none; cursor: pointer; font-weight: bold; }
+        .req-card { border-left: 5px solid #2ecc71; margin-bottom: 10px; padding: 15px; background: #e8f5e9; border-radius: 8px; }
+        .del-btn { background: #e74c3c; width: auto; padding: 5px 15px; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-box">
+        <h2>Admin Access</h2>
+        <input type="password" id="admin-pass" placeholder="Enter Password">
+        <button onclick="login()">Login</button>
+        <p style="font-size: 12px; color: gray;">Password: GURUJI@123</p>
+    </div>
+
+    <div id="admin-content">
+        <div class="card">
+            <h2>➕ Add New Question</h2>
+            <input type="text" id="q-txt" placeholder="Sawal (Question)">
+            <input type="text" id="o0" placeholder="Option 1">
+            <input type="text" id="o1" placeholder="Option 2">
+            <input type="text" id="o2" placeholder="Option 3">
+            <input type="text" id="o3" placeholder="Option 4">
+            <select id="correct-idx">
+                <option value="0">Option 1 Correct</option>
+                <option value="1">Option 2 Correct</option>
+                <option value="2">Option 3 Correct</option>
+                <option value="3">Option 4 Correct</option>
+            </select>
+            <button onclick="addQuestion()">Add to Quiz</button>
+        </div>
+
+        <div class="card">
+            <h2>💸 Pending Withdrawals</h2>
+            <div id="withdraw-list">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        const config = {
+            apiKey: "AIzaSyBpRSm6R2q3MluRWU_5MTVh7unovkVcOgk",
+            databaseURL: "https://famous-palisade-437405-m5-default-rtdb.firebaseio.com",
+            projectId: "famous-palisade-437405-m5"
+        };
+        firebase.initializeApp(config);
+        const db = firebase.database();
+
+        function login() {
+            if(document.getElementById('admin-pass').value === "GURUJI@123") {
+                document.getElementById('login-box').style.display = 'none';
+                document.getElementById('admin-content').style.display = 'block';
+                loadData();
+            } else { alert("Galat Password!"); }
+        }
+
+        function addQuestion() {
+            const q = document.getElementById('q-txt').value;
+            const options = [document.getElementById('o0').value, document.getElementById('o1').value, document.getElementById('o2').value, document.getElementById('o3').value];
+            const correct = parseInt(document.getElementById('correct-idx').value);
+            if(q && options[0]) {
+                db.ref('quiz_questions').push({ q, o: options, c: correct }).then(() => {
+                    alert("Sawal add ho gaya!");
+                    document.querySelectorAll('input[type="text"]').forEach(i => i.value = "");
+                });
+            }
+        }
+
+        function loadData() {
+            db.ref('withdrawals').on('value', snap => {
+                const list = document.getElementById('withdraw-list');
+                list.innerHTML = '';
+                snap.forEach(child => {
+                    const d = child.val();
+                    list.innerHTML += `<div class="req-card">
+                        <p><strong>UPI:</strong> ${d.upi} | <strong>Coins:</strong> ${d.amount}</p>
+                        <button class="del-btn" onclick="deleteItem('withdrawals/${child.key}')">Paid & Delete</button>
+                    </div>`;
+                });
+                if(!list.innerHTML) list.innerHTML = "No requests! ✅";
+            });
+        }
+
+        function deleteItem(path) {
+            if(confirm("Delete karein?")) { db.ref(path).remove(); }
+        }
+    </script>
+</body>
+</html>
