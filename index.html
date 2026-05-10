@@ -104,28 +104,138 @@
         };
         
         firebase.initializeApp(config);
-        db = firebase.database();
-        userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "guest_"+Math.floor(Math.random()*999);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Guruji Quiz Pro</title>
+    
+    <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
+    <style>
+        :root {
+            --bg: #121212;
+            --card: #1e1e1e;
+            --text: #ffffff;
+            --accent: #0088cc;
+            --success: #2ecc71;
+            --error: #e74c3c;
+        }
+
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; text-align: center; overflow: hidden; user-select: none; }
+        
+        .top-bar { display: flex; gap: 8px; margin-bottom: 15px; }
+        .stat-item { background: var(--card); flex: 1; padding: 12px 5px; border-radius: 12px; font-weight: bold; font-size: 13px; border: 1px solid #333; }
+        
+        .game-card { background: var(--card); padding: 25px 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); min-height: 320px; display: flex; flex-direction: column; justify-content: center; }
+        #question { font-size: 20px; font-weight: 700; margin-bottom: 25px; line-height: 1.4; }
+        
+        .opt-btn { background: #2a2a2a; border: 1px solid #444; padding: 15px; border-radius: 12px; margin-bottom: 10px; font-size: 16px; font-weight: 500; cursor: pointer; width: 100%; text-align: left; color: #fff; outline: none; }
+        .correct { background: var(--success) !important; border-color: #27ae60 !important; }
+        .wrong { background: var(--error) !important; border-color: #c0392b !important; }
+
+        .bonus-group { display: flex; gap: 10px; margin-top: 20px; }
+        .bonus-btn { flex: 1; border: none; padding: 12px; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; font-size: 13px; }
+        .daily { background: #f39c12; }
+        .watch { background: #3498db; }
+
+        #withdraw-page, #reward-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 1000; padding: 20px; box-sizing: border-box; }
+        .action-btn { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-size: 16px; font-weight: bold; margin-bottom: 12px; cursor: pointer; }
+        
+        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { border: 3px solid #333; border-left-color: var(--accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div id="loader"><div class="spinner"></div></div>
+
+<div class="top-bar">
+    <div class="stat-item">💰 <span id="coin-txt">0</span></div>
+    <div class="stat-item">🏆 Streak: <span id="streak-txt">0</span>/3</div>
+    <div class="stat-item" style="background:var(--success); cursor:pointer;" onclick="openPage('withdraw-page')">Withdraw</div>
+</div>
+
+<div class="game-card">
+    <div id="question">Quiz loading...</div>
+    <div id="options-box"></div>
+    <div class="bonus-group">
+        <button class="bonus-btn daily" onclick="handleAdsterra('daily')">🎁 Daily Bonus</button>
+        <button class="bonus-btn watch" onclick="handleAdsterra('watch')">📺 Watch & Earn</button>
+    </div>
+</div>
+
+<div id="reward-overlay">
+    <div style="background:var(--card); padding:30px; border-radius:20px; margin-top:50px;">
+        <h2 style="margin-top:0">Superb! 🏆</h2>
+        <p>Choose your Reward:</p>
+        <button class="action-btn" style="background:#2ecc71;" onclick="handleAdsterra('reward_normal')">💰 Claim 50 Coins</button>
+        <button class="action-btn" style="background:#f1c40f; color:#000;" onclick="handleAdsterra('reward_extra')">🔥 Claim 80 Coins</button>
+        <button class="action-btn" style="background:#444;" onclick="resetGame(); closePage('reward-overlay');">Keep Playing</button>
+    </div>
+</div>
+
+<div id="withdraw-page">
+    <div style="background:var(--card); padding:25px; border-radius:20px;">
+        <h2>Withdraw</h2>
+        <input type="text" id="upi-input" placeholder="Enter UPI ID" style="width:100%; padding:15px; border-radius:10px; border:1px solid #333; margin-bottom:15px; background:#121212; color:#fff;">
+        <button class="action-btn" onclick="submitWithdraw()">Request Payout</button>
+        <button class="action-btn" style="background:#444;" onclick="closePage('withdraw-page')">Back</button>
+    </div>
+</div>
+
+<script>
+    // --- TEENO LINKS YAHAN HAIN ---
+    const LINK_1 = "https://www.profitablecpmratenetwork.com/sw6x4kb1?key=8392426d1693ebf376ed4c76676e45a8";
+    const LINK_2 = "https://www.profitablecpmratenetwork.com/jumf2981d?key=d69c896e4affe38b0f290f5a8d56b3ff";
+    const LINK_3 = "https://www.profitablecpmratenetwork.com/r3pksuu0m?key=c22fa2c5393948a2a3af9f97965c820d";
+
+    const questions = [
+        { q: "Computer ka brain kise kehte hain?", o: ["RAM", "Mouse", "CPU", "Keyboard"], c: 2 },
+        { q: "Bharat ka National Bird kaunsa hai?", o: ["Peacock", "Parrot", "Eagle", "Crow"], c: 0 },
+        { q: "Rajasthan ka 'Pink City' kaun hai?", o: ["Ajmer", "Udaipur", "Jaipur", "Kota"], c: 2 },
+        { q: "Thala kis player ka naam hai?", o: ["Virat", "Dhoni", "Rohit", "Hardik"], c: 1 },
+        { q: "Bharat ki Rajdhani kya hai?", o: ["Mumbai", "Delhi", "Jaipur", "Kolkata"], c: 1 }
+    ];
+
+    let db, userId, userCoins = 0, streak = 0, canAnswer = true, currentQIndex = 0;
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    function init() {
+        const config = {
+            apiKey: "AIzaSyBpRSm6R2q3MluRWU_5MTVh7unovkVcOgk",
+            authDomain: "famous-palisade-437405-m5.firebaseapp.com",
+            databaseURL: "https://famous-palisade-437405-m5-default-rtdb.firebaseio.com",
+            projectId: "famous-palisade-437405-m5",
+            storageBucket: "famous-palisade-437405-m5.firebasestorage.app",
+            messagingSenderId: "686867296734",
+            appId: "1:686867296734:web:ee2515d37e0e0e22f16d4f"
+        };
+        firebase.initializeApp(config);
+        db = firebase.database();
+        userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "user_"+Math.floor(Math.random()*9999);
+        
         firebase.auth().signInAnonymously().then(() => {
             db.ref('users/' + userId).on('value', snap => {
                 userCoins = (snap.val() && snap.val().coins) || 0;
                 document.getElementById('coin-txt').innerText = userCoins;
-                hideLoader();
+                document.getElementById('loader').style.display = 'none';
+                if(document.getElementById('options-box').innerHTML === "") loadQuiz();
             });
-        }).catch(e => {
-            console.log(e);
-            hideLoader();
         });
     }
 
-    function hideLoader() {
-        document.getElementById('loader').style.display = 'none';
-        if(document.getElementById('options-box').innerHTML === "") nextQ();
-    }
-
-    function nextQ() {
-        let q = questions[Math.floor(Math.random() * questions.length)];
+    function loadQuiz(isRetry = false) {
+        canAnswer = true;
+        if(!isRetry) currentQIndex = Math.floor(Math.random() * questions.length);
+        let q = questions[currentQIndex];
         document.getElementById('question').innerText = q.q;
         let box = document.getElementById('options-box');
         box.innerHTML = '';
@@ -133,56 +243,73 @@
             let btn = document.createElement('button');
             btn.className = 'opt-btn';
             btn.innerText = opt;
-            btn.onclick = () => {
-                if(i === q.c) {
-                    streak++;
-                    document.getElementById('streak-txt').innerText = streak;
-                    if(streak >= 3) {
-                        tg.showConfirm("3 Sahi! Ad dekh kar 50 coins lein?", ok => { if(ok) showMonetag(); else reset(); });
-                    } else { tg.showAlert("Sahi!"); nextQ(); }
-                } else { tg.showAlert("Galat!"); reset(); }
-            };
+            btn.onclick = () => checkAns(i, q.c, btn);
             box.appendChild(btn);
         });
     }
 
-    function showMonetag() {
-        if(typeof show_10985812 === 'function') {
-            show_10985812().then(() => {
-                db.ref('users/'+userId).update({ coins: userCoins + 50 });
-                reset();
-            }).catch(() => reset());
-        } else reset();
+    function checkAns(picked, correct, btn) {
+        if(!canAnswer) return;
+        canAnswer = false;
+        if(picked === correct) {
+            btn.classList.add('correct');
+            streak++;
+            document.getElementById('streak-txt').innerText = streak;
+            tg.HapticFeedback.notificationOccurred('success');
+            if(streak >= 3) {
+                setTimeout(() => openPage('reward-overlay'), 500);
+            } else { setTimeout(() => loadQuiz(), 800); }
+        } else {
+            btn.classList.add('wrong');
+            tg.HapticFeedback.notificationOccurred('error');
+            setTimeout(() => {
+                tg.showConfirm("Wrong Answer! Watch Ad to Retry same question?", ok => {
+                    if(ok) handleAdsterra('retry');
+                    else { streak = 0; document.getElementById('streak-txt').innerText = 0; loadQuiz(); }
+                });
+            }, 500);
+        }
     }
 
     function handleAdsterra(type) {
-        let link = type === 'daily' ? AD_LINK_1 : AD_LINK_2;
-        let bonus = type === 'daily' ? 20 : 10;
-        tg.showConfirm("Ad dekh kar coins lein?", ok => {
-            if(ok) {
-                tg.openLink(link);
-                setTimeout(() => {
-                    db.ref('users/'+userId).update({ coins: userCoins + bonus });
-                    tg.showAlert("Coins added!");
-                }, 4000);
+        let link = LINK_1;
+        let bonus = 0;
+
+        if(type === 'daily') { link = LINK_1; bonus = 20; }
+        if(type === 'watch') { link = LINK_1; bonus = 10; }
+        if(type === 'reward_normal') { link = LINK_2; bonus = 50; }
+        if(type === 'reward_extra') { link = LINK_3; bonus = 80; }
+        if(type === 'retry') { link = LINK_3; bonus = 0; }
+
+        tg.openLink(link);
+        
+        setTimeout(() => {
+            if(bonus > 0) {
+                db.ref('users/'+userId).update({ coins: userCoins + bonus });
+                tg.showAlert(bonus + " Coins Success!");
+                if(type.includes('reward')) { closePage('reward-overlay'); resetGame(); }
+            } else if(type === 'retry') {
+                loadQuiz(true); // Retry same question
             }
-        });
+        }, 4000); // 4 Sec delay for ad impact
     }
 
-    function reset() { streak = 0; document.getElementById('streak-txt').innerText = 0; nextQ(); }
-    function openWithdraw() { document.getElementById('withdraw-page').style.display = 'block'; }
-    function closeWithdraw() { document.getElementById('withdraw-page').style.display = 'none'; }
+    function resetGame() { streak = 0; document.getElementById('streak-txt').innerText = 0; loadQuiz(); }
+    function openPage(id) { document.getElementById(id).style.display = 'block'; }
+    function closePage(id) { document.getElementById(id).style.display = 'none'; }
+
     function submitWithdraw() {
         let upi = document.getElementById('upi-input').value;
-        if(userCoins < 2000) return tg.showAlert("Min 2000 Coins!");
-        db.ref('withdrawals').push({ uid:userId, upi:upi, amount:userCoins, status:'pending' }).then(() => {
+        if(userCoins < 2000) return tg.showAlert("Min ₹20 Needed!");
+        if(!upi.includes('@')) return tg.showAlert("Valid UPI ID!");
+        db.ref('withdrawals').push({ uid:userId, upi:upi, amount:userCoins, status:'pending', date: new Date().toLocaleString() }).then(() => {
             db.ref('users/'+userId).update({ coins: 0 });
-            tg.showAlert("Sent!"); closeWithdraw();
+            tg.showAlert("Sent! Payout in 24h.");
+            closePage('withdraw-page');
         });
     }
 
-    // Force hide loader after 6 seconds if stuck
-    setTimeout(hideLoader, 6000);
+    document.addEventListener('contextmenu', e => e.preventDefault());
     init();
 </script>
 </body>
