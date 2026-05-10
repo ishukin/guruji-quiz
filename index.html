@@ -31,7 +31,7 @@
 </head>
 <body>
 
-<div id="loader"><div class="spinner"></div><p style="margin-top:10px; font-size:12px;">Fetching Quiz from Admin...</p></div>
+<div id="loader"><div class="spinner"></div><p style="margin-top:10px; font-size:12px;">Syncing with Guru...</p></div>
 
 <div class="top-bar">
     <div class="stat-item">💰 <span id="coin-txt">0</span></div>
@@ -40,7 +40,7 @@
 </div>
 
 <div class="game-card">
-    <div id="question">Waiting for Admin to add questions...</div>
+    <div id="question">Loading Questions...</div>
     <div id="options-box"></div>
     <div class="bonus-group">
         <button class="bonus-btn" style="background:#f39c12" onclick="handleAd('daily')">🎁 Bonus</button>
@@ -50,18 +50,19 @@
 
 <div id="reward-overlay">
     <div style="background:var(--card); padding:30px; border-radius:20px; margin-top:50px;">
-        <h2>Superb! 🏆</h2>
+        <h2>Congratulations! 🏆</h2>
+        <p style="font-size:14px; color:#aaa;">Choose your reward carefully:</p>
         <button class="action-btn" style="background:#2ecc71" onclick="handleAd('reward_normal')">💰 50 Coins</button>
-        <button class="action-btn" style="background:#f1c40f; color:#000" onclick="handleAd('reward_extra')">🔥 80 Coins</button>
-        <button class="action-btn" style="background:#444" onclick="resetGame(); closePage('reward-overlay')">Back</button>
+        <button class="action-btn" style="background:#f1c40f; color:#000" onclick="handleAd('reward_extra')">🔥 80 Coins (High Ad)</button>
+        <button class="action-btn" style="background:#444" onclick="resetGame(); closePage('reward-overlay')">Back to Game</button>
     </div>
 </div>
 
 <div id="withdraw-page">
-    <div class="card" style="background:var(--card); padding:20px; border-radius:20px;">
-        <h2>Withdraw</h2>
-        <input type="text" id="upi-input" placeholder="UPI ID" style="width:100%; padding:15px; margin-bottom:15px; border-radius:10px; background:#121212; color:#fff; border:1px solid #333;">
-        <button class="action-btn" onclick="submitWithdraw()">Submit</button>
+    <div style="background:var(--card); padding:20px; border-radius:20px;">
+        <h2>Withdraw Coins</h2>
+        <input type="text" id="upi-input" placeholder="Enter UPI (e.g. name@upi)" style="width:100%; padding:15px; margin-bottom:15px; border-radius:10px; background:#121212; color:#fff; border:1px solid #333;">
+        <button class="action-btn" onclick="submitWithdraw()">Submit Request</button>
         <button class="action-btn" style="background:#444" onclick="closePage('withdraw-page')">Back</button>
     </div>
 </div>
@@ -83,9 +84,8 @@
         };
         firebase.initializeApp(config);
         db = firebase.database();
-        userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "guest_"+Math.floor(Math.random()*9999);
+        userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "user_" + Math.floor(Math.random()*9999);
 
-        // SYNC: Admin panel se sawal load karna
         db.ref('quiz_questions').on('value', snap => {
             questions = [];
             snap.forEach(child => { questions.push(child.val()); });
@@ -93,7 +93,6 @@
             if(questions.length > 0) loadQuiz();
         });
 
-        // Load User Coins
         db.ref('users/' + userId).on('value', snap => {
             userCoins = (snap.val() && snap.val().coins) || 0;
             document.getElementById('coin-txt').innerText = userCoins;
@@ -132,7 +131,7 @@
             btn.classList.add('wrong');
             tg.HapticFeedback.notificationOccurred('error');
             setTimeout(() => {
-                tg.showConfirm("Wrong! Ad dekh kar wahi sawal dobara karein?", ok => {
+                tg.showConfirm("Wrong! Watch Ad for 15s to retry same question?", ok => {
                     if(ok) handleAd('retry');
                     else { streak = 0; document.getElementById('streak-txt').innerText = 0; loadQuiz(); }
                 });
@@ -148,11 +147,25 @@
         if(type === 'watch') bonus = 10;
         
         tg.openLink(link);
+        
+        // Anti-Cheat Timer Start
+        tg.showAlert("⚠️ Wait 15 seconds on the ad page to verify and get your coins!");
+
         setTimeout(() => {
-            if(bonus > 0) db.ref('users/'+userId).update({ coins: userCoins + bonus });
-            if(type === 'retry') loadQuiz(true);
-            if(type.includes('reward')) { closePage('reward-overlay'); resetGame(); }
-        }, 4000);
+            tg.showConfirm("Kya aapne 15 second tak ad dekha?", confirmed => {
+                if(confirmed) {
+                    if(bonus > 0) {
+                        db.ref('users/'+userId).update({ coins: userCoins + bonus });
+                        tg.showAlert("✅ Success! " + bonus + " Coins added.");
+                    }
+                    if(type === 'retry') loadQuiz(true);
+                    if(type.includes('reward')) { closePage('reward-overlay'); resetGame(); }
+                } else {
+                    tg.showAlert("❌ Coins not added! You must watch the ad.");
+                    if(type.includes('reward')) { closePage('reward-overlay'); resetGame(); }
+                }
+            });
+        }, 15000); // 15 Seconds Delay
     }
 
     function resetGame() { streak = 0; document.getElementById('streak-txt').innerText = 0; loadQuiz(); }
@@ -164,7 +177,7 @@
         if(userCoins < 2000 || !upi.includes('@')) return tg.showAlert("Min 2000 coins & Valid UPI!");
         db.ref('withdrawals').push({ uid:userId, upi:upi, amount:userCoins, date: new Date().toLocaleString() });
         db.ref('users/'+userId).update({ coins: 0 });
-        tg.showAlert("Withdrawal Request Sent!");
+        tg.showAlert("Withdrawal Request Sent! Payout within 24h.");
         closePage('withdraw-page');
     }
 
