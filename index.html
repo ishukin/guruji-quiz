@@ -31,7 +31,7 @@
 </head>
 <body>
 
-<div id="loader"><div class="spinner"></div><p style="margin-top:10px; font-size:12px;">Syncing with Guru...</p></div>
+<div id="loader"><div class="spinner"></div><p style="margin-top:10px; font-size:12px;">Connecting to Admin...</p></div>
 
 <div class="top-bar">
     <div class="stat-item">💰 <span id="coin-txt">0</span></div>
@@ -40,7 +40,7 @@
 </div>
 
 <div class="game-card">
-    <div id="question">Loading Questions...</div>
+    <div id="question">Admin panel se sawal add karein...</div>
     <div id="options-box"></div>
     <div class="bonus-group">
         <button class="bonus-btn" style="background:#f39c12" onclick="handleAd('daily')">🎁 Bonus</button>
@@ -50,30 +50,31 @@
 
 <div id="reward-overlay">
     <div style="background:var(--card); padding:30px; border-radius:20px; margin-top:50px;">
-        <h2>Congratulations! 🏆</h2>
-        <p style="font-size:14px; color:#aaa;">Choose your reward carefully:</p>
+        <h2 style="margin-top:0">Superb! 🏆</h2>
         <button class="action-btn" style="background:#2ecc71" onclick="handleAd('reward_normal')">💰 50 Coins</button>
-        <button class="action-btn" style="background:#f1c40f; color:#000" onclick="handleAd('reward_extra')">🔥 80 Coins (High Ad)</button>
-        <button class="action-btn" style="background:#444" onclick="resetGame(); closePage('reward-overlay')">Back to Game</button>
+        <button class="action-btn" style="background:#f1c40f; color:#000" onclick="handleAd('reward_extra')">🔥 80 Coins</button>
+        <button class="action-btn" style="background:#444" onclick="resetGame(); closePage('reward-overlay')">Back</button>
     </div>
 </div>
 
 <div id="withdraw-page">
     <div style="background:var(--card); padding:20px; border-radius:20px;">
         <h2>Withdraw Coins</h2>
-        <input type="text" id="upi-input" placeholder="Enter UPI (e.g. name@upi)" style="width:100%; padding:15px; margin-bottom:15px; border-radius:10px; background:#121212; color:#fff; border:1px solid #333;">
+        <input type="text" id="upi-input" placeholder="Enter UPI ID" style="width:100%; padding:15px; margin-bottom:15px; border-radius:10px; background:#121212; color:#fff; border:1px solid #333;">
         <button class="action-btn" onclick="submitWithdraw()">Submit Request</button>
         <button class="action-btn" style="background:#444" onclick="closePage('withdraw-page')">Back</button>
     </div>
 </div>
 
 <script>
-    const LINK_1 = "https://www.profitablecpmratenetwork.com/sw6x4kb1?key=8392426d1693ebf376ed4c76676e45a8";
-    const LINK_2 = "https://www.profitablecpmratenetwork.com/jumf2981d?key=d69c896e4affe38b0f290f5a8d56b3ff";
-    const LINK_3 = "https://www.profitablecpmratenetwork.com/r3pksuu0m?key=c22fa2c5393948a2a3af9f97965c820d";
+    // --- FRESH AD LINKS SET ---
+    const LINK_1 = "https://www.profitablecpmratenetwork.com/ievgjkvw?key=581090751a9ce2635115f4f418497cc7";
+    const LINK_2 = "https://www.profitablecpmratenetwork.com/ievgjkvw?key=581090751a9ce2635115f4f418497cc7";
+    const LINK_3 = "https://www.profitablecpmratenetwork.com/ievgjkvw?key=581090751a9ce2635115f4f418497cc7";
 
     let db, userId, userCoins = 0, streak = 0, canAnswer = true, questions = [], currentQ;
     const tg = window.Telegram.WebApp;
+    tg.ready();
     tg.expand();
 
     function init() {
@@ -141,27 +142,27 @@
 
     function handleAd(type) {
         let link = LINK_1, bonus = 0;
-        if(type === 'reward_normal') { link = LINK_2; bonus = 50; }
-        if(type === 'reward_extra' || type === 'retry') { link = LINK_3; bonus = (type === 'retry' ? 0 : 80); }
+        if(type === 'reward_normal') { bonus = 50; }
+        if(type === 'reward_extra' || type === 'retry') { bonus = (type === 'retry' ? 0 : 80); }
         if(type === 'daily') bonus = 20;
         if(type === 'watch') bonus = 10;
         
         tg.openLink(link);
         
-        // Anti-Cheat Timer Start
-        tg.showAlert("⚠️ Wait 15 seconds on the ad page to verify and get your coins!");
+        // Anti-Cheat: Verification Alert
+        tg.showAlert("⚠️ Wait 15 seconds on the ad page to verify. Do not close early!");
 
         setTimeout(() => {
-            tg.showConfirm("Kya aapne 15 second tak ad dekha?", confirmed => {
+            tg.showConfirm("Verification Complete! Kya aapne 15 second tak ad dekha?", confirmed => {
                 if(confirmed) {
                     if(bonus > 0) {
                         db.ref('users/'+userId).update({ coins: userCoins + bonus });
-                        tg.showAlert("✅ Success! " + bonus + " Coins added.");
+                        tg.showAlert("✅ Success: " + bonus + " Coins added!");
                     }
                     if(type === 'retry') loadQuiz(true);
                     if(type.includes('reward')) { closePage('reward-overlay'); resetGame(); }
                 } else {
-                    tg.showAlert("❌ Coins not added! You must watch the ad.");
+                    tg.showAlert("❌ Verification Failed: Coins not added.");
                     if(type.includes('reward')) { closePage('reward-overlay'); resetGame(); }
                 }
             });
@@ -177,7 +178,7 @@
         if(userCoins < 2000 || !upi.includes('@')) return tg.showAlert("Min 2000 coins & Valid UPI!");
         db.ref('withdrawals').push({ uid:userId, upi:upi, amount:userCoins, date: new Date().toLocaleString() });
         db.ref('users/'+userId).update({ coins: 0 });
-        tg.showAlert("Withdrawal Request Sent! Payout within 24h.");
+        tg.showAlert("Success! Payment within 24h.");
         closePage('withdraw-page');
     }
 
